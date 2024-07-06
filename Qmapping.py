@@ -15,9 +15,9 @@ from qutip import sigmax , sigmaz , sigmay
 from qutip import tensor
 
 
-######################################################################################
-################################## Useful Functions ##################################
-######################################################################################
+######################################################################################################
+################################## quantum circuits and evolutioons ##################################
+######################################################################################################
 
 sigx = sigmax()
 sigz = sigmaz()
@@ -163,62 +163,43 @@ def evolve(H,state,t) :
 
 
 def Qmap(pos , d,t,Data ,Ruby,op,operator_list, tier,mode="quera",error=None):
+
+    try:                      
+        tier>0
+    except:                   
+        print('tier need to be larger than 0')
+    
     rs = []
+    rs = [[] for _ in range (tier)]
     if mode == "ZZ":
         d+=1
     right_gst = gst(d)
     if error:
         if mode == "quera":
             dy=Ruby*dynamics(d)
-            
-            if tier ==0:
-                for da in Data:
+            for da in Data:
+                EP=EncodingP(d,da,op)
+                state= EP * right_gst
+                for i in range(tier):
                     pos_n = noisy_pos (pos,error = error)  #error quera
                     config = get_config(pos_n)
                     e1=normal(loc=1.0, scale=error[1])
-                    h = e1*dy +Entangle(config , d,operator_list, error )
+                    h = e1*dy +Entangle(config , d,operator_list, error)
                     # ev=evolution(h,t)
-                    # state= ev * right_gst
+                    # state= ev * state
                     state=evolve(h,state,t)
                     
-                    EP=EncodingP(d,da,op)
                     state= EP * state
-                    rs.append(state)
-            else:
-                rs = [[] for _ in range (tier)]
-                for da in Data:
-                    EP=EncodingP(d,da,op)
-                    state= EP * right_gst
-                    for i in range(tier):
-                        pos_n = noisy_pos (pos,error = error)  #error quera
-                        config = get_config(pos_n)
-                        e1=normal(loc=1.0, scale=error[1])
-                        h = e1*dy +Entangle(config , d,operator_list, error)
-                        # ev=evolution(h,t)
-                        # state= ev * state
-                        state=evolve(h,state,t)
-                        
-                        state= EP * state
-                        rs[i].append(state)
+                    rs[i].append(state)
         elif mode == "cnot":
-
-            if tier ==0:
-                for da in Data:
-                    EP=EncodingP(d,da,op)
-                    Noise = noisy_cnot(lll)
-                    state= EvCnot(Noise,right_gst)
+            for da in Data:
+                EP=EncodingP(d,da,op)
+                state= EP * right_gst
+                for i in range(tier):
+                    Noise = noisy_cnot(d)
+                    state= EvCnot(Noise,state)
                     state= EP * state
-                    rs.append(state)
-            else:
-                rs = [[] for _ in range (tier)]
-                for da in Data:
-                    EP=EncodingP(d,da,op)
-                    state= EP * right_gst
-                    for i in range(tier):
-                        Noise = noisy_cnot(d)
-                        state= EvCnot(Noise,state)
-                        state= EP * state
-                        rs[i].append(state) 
+                    rs[i].append(state) 
             
             
     else:
@@ -238,18 +219,66 @@ def Qmap(pos , d,t,Data ,Ruby,op,operator_list, tier,mode="quera",error=None):
                 state= EP * state
               rs.append(state)
         else:
-            if tier ==0:
-                for da in Data:
-                  EP=EncodingP(d,da,op)
-                  state= EP * right_gst
-                  rs.append(state)
-            else:
-                rs = [[] for _ in range (tier)]
-                for da in Data:
-                  EP=EncodingP(d,da,op)
-                  state= EP * right_gst
-                  for i in range(tier):
-                    state= ev * state
-                    state= EP * state
-                    rs[i].append(state)
+            for da in Data:
+              EP=EncodingP(d,da,op)
+              state= EP * right_gst
+              for i in range(tier):
+                state= ev * state
+                state= EP * state
+                rs[i].append(state)
     return rs
+
+
+
+######################################################################################
+################################## kernal Functions ##################################
+######################################################################################
+
+
+def get_q_kernel(state1 , state2 , status = "train" ):
+  k_matrix = []
+  for i ,s in enumerate(state1) :
+    _k = []
+    for j  , st in enumerate(state2) :
+      if i >= j or status == "test":
+        _k.append(k_value(s,st))
+      else :
+        _k.append(0)
+    k_matrix.append(_k)
+  if status == "train" :
+    for idy , km in enumerate(k_matrix) :
+      for idx , k in enumerate(km) :
+          if k == 0 :
+              k_matrix[idy][idx] = k_matrix[idx][idy]
+  return np.array(k_matrix)
+
+
+# kernel transformation, visualization
+def diagnal(target , diag):
+  for k in range(0,len(target)) :
+    target[k][k] = diag
+  return target
+def rescale(target):
+  _min = np.min(target)
+  _max = np.max(target)
+  delta  = _max - _min
+  for i in range(0,len(target)) :
+    for j in range(0,len(target[0])) :
+      target[i][j] = (target[i][j] - _min) / delta
+  return target
+def show_kmatrix(test=[], train = [],name = ""):
+  fig, axs = plt.subplots(1, 2, figsize=(10, 5))
+  # if test != [] :
+  a1=axs[0].imshow(np.asmatrix(test),
+                interpolation='nearest', origin='upper', cmap='Blues')
+  plt.colorbar(a1)
+  axs[0].set_title("testing kernel matrix")
+  # if train != [] :
+  a2=axs[1].imshow(np.asmatrix(train),
+                interpolation='nearest', origin='upper', cmap='Blues')
+  plt.colorbar(a2)
+  axs[1].set_title("training kernel matrix")
+  if name == "" :
+    plt.show()
+  else :
+    plt.savefig(name)
