@@ -14,11 +14,12 @@ from qutip import Qobj,basis
 from qutip import sigmax , sigmaz , sigmay
 from qutip import tensor
 
-
 ######################################################################################################
-################################## quantum circuits and evolutioons ##################################
+################################## useful operators and parameters ###################################
 ######################################################################################################
 
+C6 = 5.42e-24
+desire_rabi = 8*np.pi *1e6
 sigx = sigmax()
 sigz = sigmaz()
 sigy = sigmay()
@@ -26,6 +27,12 @@ iid = qutip.qeye(2)
 rr = Qobj([[0,0],[0,1]])
 ee = Qobj([[1,0],[0,0]])
 cnot=tensor(ee, iid)+ tensor(rr, sigx)
+
+######################################################################################################
+################################## quantum circuits and evolutioons ##################################
+######################################################################################################
+
+
 
 def Rz(theta):
     return Qobj([[1,0],[0,cmath.exp(1j*theta)]])
@@ -164,10 +171,9 @@ def evolve(H,state,t) :
 
 def Qmap(pos , d,t,Data ,Ruby,op,operator_list, tier,mode="quera",error=None):
 
-    try:                      
-        tier>0
-    except:                   
-        print('tier need to be larger than 0')
+    if tier<=0 :                   
+        print('Error! tier need to be larger than 0')
+        return 
     
     rs = []
     rs = [[] for _ in range (tier)]
