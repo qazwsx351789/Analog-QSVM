@@ -82,7 +82,11 @@ def EncodingP(d,data,op):
     for i in range(1,d) :
       h = tensor(h,iid * math.cos(data[i]) - sigx *1j* math.sin(data[i]))
     return h
-
+def Get_sigy(d):
+    h =  sigy
+    for i in range(1,d) :
+        h = tensor(h,sigy)
+    return h
 
 def Entangle(config , d, operator_list, error=None ):
     e0 = 0
@@ -143,7 +147,7 @@ def EvCnot(AAA,state):
         state = i*state
     return state
     
-def get_config(pos):
+def get_config(pos,detun=0):
     config = np.zeros([len(pos),len(pos)])
     for idx , r in enumerate(pos) :
         for idy , _r in enumerate(pos) :
@@ -152,6 +156,9 @@ def get_config(pos):
                 # since we set the value of V/U
                 v = v /desire_rabi 
                 config[idx][idy] = v
+            else:
+                config[idx][idy] = detun
+                
     return config
 # chain
 def noisy_pos(r, error):
@@ -233,7 +240,69 @@ def Qmap(pos , d,t,Data ,Ruby,op,operator_list, tier,mode="quera",error=None):
                 state= EP * state
                 rs[i].append(state)
     return rs
+def Qmap_ana(pos , d,t,Data ,Ruby,op,operator_list, tier,detun=0,mode="quera",error=None):
 
+    if tier<=0 :                   
+        print('Error! tier need to be larger than 0')
+        return 
+    
+    rs1 = [[] for _ in range (tier)]
+    rs2 = [[] for _ in range (tier)]
+    
+    if mode == "ZZ":
+        d+=1
+    right_gst = gst(d)
+    if error:
+        if mode == "quera":
+            dy=Ruby*dynamics(d)
+            for da in Data:
+                EP=EncodingP(d,da,op)
+                state= EP * right_gst
+                for i in range(tier):
+                    pos_n = noisy_pos (pos,error = error)  #error quera
+                    config = get_config(pos_n,detun)
+                    e1=normal(loc=1.0, scale=error[1])
+                    h = e1*dy +Entangle(config , d,operator_list, error)
+                    # ev=evolution(h,t)
+                    # state= ev * state
+                    state=evolve(h,state,t)
+                    
+                    state= EP * state
+                    rs[i].append(state)
+        elif mode == "cnot":
+            for da in Data:
+                EP=EncodingP(d,da,op)
+                state= EP * right_gst
+                for i in range(tier):
+                    Noise = noisy_cnot(d)
+                    state= EvCnot(Noise,state)
+                    state= EP * state
+                    rs[i].append(state) 
+            
+            
+    else:
+        config = get_config(pos,detun)
+        if mode == "quera":
+            h = HMap(config ,d ,Ruby,operator_list)
+            ev=evolution(h,t)
+            sigy_=Get_sigy(d)
+            ev_=sigy_*evolution(-h,t)*sigy_.dag()
+        elif mode == "cnot":
+            ev = CnotGate(d)
+            
+        for da in Data:
+            EP=EncodingP(d,da,op)
+            state1= EP * right_gst
+            state2=state1
+            for i in range(tier):
+                state1= ev * state1
+                state1= EP * state1
+                rs1[i].append(state1)
+                
+                state2= ev_ * state2
+                state2= EP * state2
+                rs2[i].append(state2)
+    return rs1,rs2
 
 
 ######################################################################################
