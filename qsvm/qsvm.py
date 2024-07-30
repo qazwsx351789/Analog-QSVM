@@ -1,3 +1,32 @@
+import numpy as np
+from numpy import linalg as LA
+from sklearn.preprocessing import StandardScaler
+
+class Pca:
+    def __init__(self,PCA_n=10,StandardizeOrNot=True):
+        self.PCA_n=PCA_n
+        self.StandardizeOrNot=StandardizeOrNot
+        self.Fitted=False
+    def fitting(self,traindata):
+        if self.Fitted:
+            print("It has been fitted!! The previous fitting was recovered.")
+        if self.StandardizeOrNot == True:
+            traindata = scaler.fit_transform(traindata)
+        cov_train = np.cov(traindata.T)
+        eig_vals, eig_vecs = LA.eig(cov_train)
+        sort_indices = np.argsort(eig_vals)[::-1]
+        eig_vals = eig_vals[sort_indices]
+        eig_vecs = eig_vecs[:, sort_indices]
+        self.eig_vec = eig_vecs[:, :self.PCA_n]
+        self.Fitted = True
+    def transform(self,data):
+        if self.StandardizeOrNot == True:
+            data = scaler.fit_transform(data)   
+        data = np.real(np.dot(data, eig_vec))
+        data=np.array(data)
+        return data
+
+
 class QSVM(self) :
     def __init__(self,method,task='svr',config={}):
         self.method = method
