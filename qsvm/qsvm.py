@@ -25,23 +25,39 @@ class Pca:
         data = np.real(np.dot(data, eig_vec))
         data=np.array(data)
         return data
+    def Renormalize_Each_Feature(self,data,Norm=np.pi/2):
+        f_scale =[]
+        f_min =[]
+        
+        for i in range(0 ,len(data[0])) :
+          tg = [x[i] for x in data]
+          f_scale.append(np.max(tg) - np.min(tg))
+          f_min.append(np.min(tg))
+        trs = []
+        for x in data :
+          rs = []
+          for i , scale , min in zip(x ,f_scale , f_min) :
+            rs.append((i-min)/scale*Norm)
+          trs.append(rs)
+        return=np.array(data)
 
 
 class QSVM(self) :
-    def __init__(self,method,task='svr',config={}):
+    def __init__(self,method='analog+digital',task='svc'):
         self.method = method
-        self.config = config
+        self.config = {}
         self.train_set = []
-        self.svm = SVC(method = 'precomputed')
         if task == 'svr' :
             self.svm = SVR(method =  'precomputed')
+        else:
+            self.svm = SVC(method = 'precomputed')
         if self.config == {} :
             self.default_phys_sys()
     def default_phys_sys(self):
         self.config['rabi'] = 1
         self.config['detuning'] = 1
         self.config['atomn'] = 10
-        self.config['pos'] = [i* 7.6*1e-6 for i in atomn]            
+        self.config['pos'] = [i* 7.6*1e-6 for i in atomn]  
     def get_kernel(self, lst1 , lst2):
         if self.method == 'rbf' :
             kermnel = fsadf

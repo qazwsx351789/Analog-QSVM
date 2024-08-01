@@ -96,3 +96,28 @@ def _tune(target ,x_train,y_train,x_test , y_test ,kernel_method , tg = 'ts'):
         best_dict['C'] = c
   print(param_grid[0]['C'])
   return best_dict
+
+def pca():
+    scaler = StandardScaler()
+    train = scaler.fit_transform(traindata)
+    test = scaler.fit_transform(testdata)
+    
+    #step2
+    cov_train = np.cov(train.T)
+    
+    #step3
+    eig_vals, eig_vecs = LA.eig(cov_train)
+    
+    #step4
+    sort_indices = np.argsort(eig_vals)[::-1]
+    eig_vals = eig_vals[sort_indices]
+    eig_vecs = eig_vecs[:, sort_indices]
+    
+    #step5
+    k = 10 ## The number of features after PCA
+    eig_vec = eig_vecs[:, :k]
+    
+    
+    #step6
+    train_pca = np.real(np.dot(train, eig_vec))
+    test_pca = np.real(np.dot(test, eig_vec))

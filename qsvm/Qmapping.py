@@ -258,7 +258,6 @@ def get_q_kernel(state1 , state2 , status = "train" ):
               k_matrix[idy][idx] = k_matrix[idx][idy]
   return np.array(k_matrix)
 
-
 # kernel transformation, visualization
 def diagnal(target , diag):
   for k in range(0,len(target)) :
