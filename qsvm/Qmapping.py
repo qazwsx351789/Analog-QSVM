@@ -242,21 +242,23 @@ def Qmap(pos , d,t,Data ,Ruby,op,operator_list, tier,mode="quera",error=None):
 
 
 def get_q_kernel(state1 , state2 , status = "train" ):
-  k_matrix = []
-  for i ,s in enumerate(state1) :
-    _k = []
-    for j  , st in enumerate(state2) :
-      if i >= j or status == "test":
-        _k.append(k_value(s,st))
-      else :
-        _k.append(0)
-    k_matrix.append(_k)
-  if status == "train" :
-    for idy , km in enumerate(k_matrix) :
-      for idx , k in enumerate(km) :
-          if k == 0 :
-              k_matrix[idy][idx] = k_matrix[idx][idy]
-  return np.array(k_matrix)
+    k_matrix = []
+    for i ,s in enumerate(state1) :
+        _k = []
+        for j , st in enumerate(state2):
+            if i >= j or status == "test":
+                _k.append(k_value(s,st))
+            else :
+                _k.append(0)
+        k_matrix.append(_k)
+    if status == "train" :
+        for idy , km in enumerate(k_matrix) :
+            for idx , k in enumerate(km) :
+                if k == 0 :
+                    k_matrix[idy][idx] = k_matrix[idx][idy]
+                if idy==idx:
+                    k_matrix[idy][idx]=1
+    return np.array(k_matrix)
 
 # kernel transformation, visualization
 def diagnal(target , diag):
