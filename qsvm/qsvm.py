@@ -23,6 +23,7 @@ from qsvm.Qmapping import ZZGate
 from qsvm.Qmapping import gst
 from qsvm.Qmapping import EncodingP
 from qsvm.Qmapping import get_q_kernel
+from qsvm.Qmapping import get_q_kernel_p
 from qsvm.Qmapping import form_op
 from qsvm.Qmapping import HMap
 
@@ -97,32 +98,33 @@ class Pca:
 class QSVM :
 
     
-    def __init__(self,task='svr',config={}):
+    def __init__(self,task='svr'):
         self.task = task
         self.traindata=None
         self.trainedOrNot=False
         self.method = 'analog+digital'
-        self.config = config
+        self.config = {}
         self.train_set = []
         self.train_kernel=None
         self.C=1
-        if self.config == {} :
-            self.default_phys_sys()
         
-        
-    def default_phys_sys(self):
-        self.config['rabi'] = 1
-        self.config['detuning'] = 1
-        self.config['atomn'] = 10
-        self.config['a/R0']=1.2
-        self.config['time']=np.pi
+
+    
+    def default_phys_sys(self,atomn=10,aR0=1.2,detuning=1,rabi=1,t=np.pi):
+        self.config['rabi'] = rabi
+        self.config['detuning'] = detuning
+        self.config['a/R0']=aR0
+        self.config['atomn'] = atomn
+        self.config['time']=t
         self.config['pos'] = [i* self.config['a/R0']*R0 for i in range(self.config['atomn'])]
 
 
     
-    def get_kernel(self, data ,status='train',tier=1,method="analog+digital", op="x"):
+    def get_kernel(self, data ,status='train',tier=1,method="analog+digital", op="x", project=False,ErrorOrNot=False):
+        self.Project=project
         self.tier=tier
         self.method=method
+        self.ErrorOrNot=ErrorOrNot
         if self.config['atomn'] != len(data[0]):
             print("warning!! The atom number is unconsistent with the number of the features ")
         rs = []
@@ -138,10 +140,12 @@ class QSVM :
         matrix = np.ones([self.config['atomn'] ,self.config['atomn']])
         for idx ,x in enumerate(matrix) :
             for idy ,y in enumerate(x) :
-                self.operator_list[idx].append(form_op([idx , idy] ,rr ,10))
+                self.operator_list[idx].append(form_op([idx , idy] ,rr ,self.config['atomn']))
         
-       
+        
         right_gst = gst(self.config['atomn'])
+        
+        pos_n = noisy_pos (self.config['pos'],error = ErrorOrNot)
         config = get_config(self.config['pos'])
 
         # differnet setup
@@ -159,14 +163,23 @@ class QSVM :
                 state= ev * state
                 state= EP * state
             rs.append(state)
-        
+            
         #build kernels
-        if status=='train':
-            self.trainState=rs
-            kernel=get_q_kernel(rs,rs,status = "train")
-            self.train_kernel=kernel
+        if self.Project==True:
+                if status=='train':
+                    self.trainState=rs
+                    kernel=get_q_kernel_p(rs,rs,1/(10*data.var()),self.config['atomn'],status = "train")
+                    self.train_kernel=kernel
+                else:
+                    kernel=get_q_kernel_p(rs,self.trainState,1/(10*data.var()),self.config['atomn'],status = "test")
+        
         else:
-            kernel=get_q_kernel(rs,self.trainState,status = "test")
+            if status=='train':
+                self.trainState=rs
+                kernel=get_q_kernel(rs,rs,status = "train")
+                self.train_kernel=kernel
+            else:
+                kernel=get_q_kernel(rs,self.trainState,status = "test")
         return kernel
 
     

@@ -12,8 +12,7 @@ import qutip
 import math
 from qutip import Qobj,basis
 from qutip import sigmax , sigmaz , sigmay
-from qutip import tensor
-
+from qutip import tensor, tracedist
 ######################################################################################################
 ################################## useful operators and parameters ###################################
 ######################################################################################################
@@ -246,7 +245,9 @@ def get_q_kernel(state1 , state2 , status = "train" ):
     for i ,s in enumerate(state1) :
         _k = []
         for j , st in enumerate(state2):
-            if i >= j or status == "test":
+            if i==j and status == "train" :
+                _k.append(1)
+            elif i >= j or status == "test":
                 _k.append(k_value(s,st))
             else :
                 _k.append(0)
@@ -256,8 +257,29 @@ def get_q_kernel(state1 , state2 , status = "train" ):
             for idx , k in enumerate(km) :
                 if k == 0 :
                     k_matrix[idy][idx] = k_matrix[idx][idy]
-                if idy==idx:
-                    k_matrix[idy][idx]=1
+    return np.array(k_matrix)
+
+def get_q_kernel_p(state1 , state2 , gamma, atomn ,status = "train" ):
+    k_matrix = []
+    for i ,s in enumerate(state1) :
+        _k = []
+        for j , st in enumerate(state2):
+            if i==j and status == "train" :
+                _k.append(1)
+            elif i >= j or status == "test":
+                res=0
+                for n in range(atomn):
+                    res+=(tracedist(s.ptrace(n),st.ptrace(n)))**2
+                _k.append(np.exp(-1*gamma*(res)))
+            else :
+                _k.append(0)
+        k_matrix.append(_k)
+    if status == "train" :
+        for idy , km in enumerate(k_matrix) :
+            for idx , k in enumerate(km) :
+                if k == 0 :
+                    k_matrix[idy][idx] = k_matrix[idx][idy]
+
     return np.array(k_matrix)
 
 # kernel transformation, visualization
