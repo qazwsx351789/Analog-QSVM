@@ -1,12 +1,15 @@
 import numpy as np
 from numpy import linalg as LA
+from numpy.random import normal
+
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
 import matplotlib.pyplot as plt
+
 import qutip
 from qutip import expect , Qobj
-from qutip import tensor
+from qutip import tensor, qeye
 from qutip import sigmax , sigmaz , sigmay
 
 
@@ -26,7 +29,10 @@ from qsvm.Qmapping import get_q_kernel
 from qsvm.Qmapping import get_q_kernel_p
 from qsvm.Qmapping import form_op
 from qsvm.Qmapping import HMap
-
+from qsvm.Qmapping import evolve
+from qsvm.Qmapping import dynamics,EvCnot
+from qsvm.Qmapping import noisy_pos,noisy_cnot
+from qsvm.Qmapping import Entangle
 
 C6 = 5.42e-24
 desire_rabi = 8*np.pi *1e6
@@ -35,7 +41,7 @@ R0=(C6/desire_rabi)**(1/6)
 sigx = sigmax()
 sigz = sigmaz()
 sigy = sigmay()
-iid = qutip.qeye(2)
+iid = qeye(2)
 rr = Qobj([[0,0],[0,1]])
 ee = Qobj([[1,0],[0,0]])
 cnot=tensor(ee, iid)+ tensor(rr, sigx)
@@ -120,11 +126,14 @@ class QSVM :
 
 
     
-    def get_kernel(self, data ,status='train',tier=1,method="analog+digital", op="x", project=False,ErrorOrNot=False):
+    def get_kernel(self, data ,status='train',tier=1,method="analog+digital", op="x", project=False,Error=[]):
         self.Project=project
         self.tier=tier
         self.method=method
-        self.ErrorOrNot=ErrorOrNot
+        self.Error=Error
+        if self.Error==[] :self.ErrorOrNot = False 
+        else: self.ErrorOrNot =True
+
         if self.config['atomn'] != len(data[0]):
             print("warning!! The atom number is unconsistent with the number of the features ")
         rs = []
@@ -143,24 +152,35 @@ class QSVM :
                 self.operator_list[idx].append(form_op([idx , idy] ,rr ,self.config['atomn']))
         
         
-        right_gst = gst(self.config['atomn'])
-        
-        pos_n = noisy_pos (self.config['pos'],error = ErrorOrNot)
-        config = get_config(self.config['pos'])
-
         # differnet setup
-        if self.method == 'analog+digital':
-            h = HMap(config ,self.config['atomn'] ,self.config['rabi'],self.operator_list)
-            ev=evolution(h,self.config['time'])
-        elif self.method == "digital":
-            ev = CnotGate(self.dim)
+        right_gst = gst(self.config['atomn'])
+        if not self.ErrorOrNot:
+            config = get_config(self.config['pos'])
+            if self.method == 'analog+digital':
+                h = HMap(config ,self.config['atomn'] ,self.config['rabi'],self.operator_list)
+                ev=evolution(h,self.config['time'])
+            elif self.method == "digital":
+                ev = CnotGate(self.config['atomn'])
+        else:
+            dy=self.config['rabi']*dynamics(self.config['atomn'])
             
         # build states
         for da in data:
             EP=EncodingP(self.config['atomn'],da,op)
             state= EP * right_gst
             for i in range(self.tier):
-                state= ev * state
+                if self.ErrorOrNot:
+                    if self.method == 'analog+digital':
+                        pos_n = noisy_pos (self.config['pos'],error = self.Error)  #error quera
+                        config = get_config(pos_n)
+                        e1=normal(loc=1.0, scale=self.Error[1])
+                        h = e1*dy +Entangle(config, self.config['atomn'],self.operator_list, self.Error)
+                        state=evolve(h,state,self.config['time'])
+                    elif self.method == "digital":
+                        Noise = noisy_cnot(self.config['atomn'])
+                        state= EvCnot(Noise,state)
+                else:
+                    state= ev * state
                 state= EP * state
             rs.append(state)
             

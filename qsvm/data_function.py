@@ -74,7 +74,7 @@ def tune(target ,x_train , y_train,kernel_method) :
   rd_search = RandomizedSearchCV(target ,param_grid,n_jobs=8)
   rd_search.fit(x_train, y_train)
   return rd_search.best_params_
-def _tune(target ,x_train,y_train,x_test , y_test ,kernel_method , tg = 'ts'):
+def _tune(x_train,y_train,x_test , y_test ,kernel_method , tg = 'ts'):
   param_grid =[{'kernel':kernel_method,
     'epsilon':np.arange(0,0.1,0.001),
             'C':np.arange(0.1,1,0.1)}]
