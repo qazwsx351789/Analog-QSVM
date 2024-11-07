@@ -28,11 +28,9 @@ from qsvm.Qmapping import EncodingP
 from qsvm.Qmapping import get_q_kernel
 from qsvm.Qmapping import get_q_kernel_p
 from qsvm.Qmapping import form_op
-from qsvm.Qmapping import HMap
-from qsvm.Qmapping import evolve
-from qsvm.Qmapping import dynamics,EvCnot
+from qsvm.Qmapping import dynamics,EvCnot,evolve,HMap
 from qsvm.Qmapping import noisy_pos,noisy_cnot
-from qsvm.Qmapping import Entangle
+from qsvm.Qmapping import Entangle,add_detuning
 
 C6 = 5.42e-24
 desire_rabi = 8*np.pi *1e6
@@ -108,7 +106,7 @@ class QSVM :
         self.task = task
         self.traindata=None
         self.trainedOrNot=False
-        self.method = 'analog+digital'
+        self.method = 'hybrid'
         self.config = {}
         self.train_set = []
         self.train_kernel=None
@@ -116,7 +114,7 @@ class QSVM :
         
 
     
-    def default_phys_sys(self,atomn=10,aR0=1.2,detuning=1,rabi=1,t=np.pi):
+    def default_phys_sys(self,atomn=10,aR0=1.2,detuning=0,rabi=1,t=np.pi):
         self.config['rabi'] = rabi
         self.config['detuning'] = detuning
         self.config['a/R0']=aR0
@@ -124,16 +122,15 @@ class QSVM :
         self.config['time']=t
         self.config['pos'] = [i* self.config['a/R0']*R0 for i in range(self.config['atomn'])]
 
-
     
-    def get_kernel(self, data ,status='train',tier=1,method="analog+digital", op="x", project=False,Error=[]):
+    def get_kernel(self, data ,status='train',tier=1,method="hybrid", op="x", project=False,Error=[]):
+        global fixterm
         self.Project=project
         self.tier=tier
         self.method=method
         self.Error=Error
-        if self.Error==[] :self.ErrorOrNot = False 
-        else: self.ErrorOrNot =True
-
+        self.ErrorOrNot =False if self.Error==[] else True 
+        
         if self.config['atomn'] != len(data[0]):
             print("warning!! The atom number is unconsistent with the number of the features ")
         rs = []
@@ -143,45 +140,64 @@ class QSVM :
                 print("Error!!!This model has been train.")
                 return 
             self.trainedOrNot=True
-            
+
         # form operators
-        self.operator_list = [[] for i in range(self.config['atomn'])]
-        matrix = np.ones([self.config['atomn'] ,self.config['atomn']])
-        for idx ,x in enumerate(matrix) :
-            for idy ,y in enumerate(x) :
-                self.operator_list[idx].append(form_op([idx , idy] ,rr ,self.config['atomn']))
-        
+        self.operator_list = [[form_op([idx , idy] ,rr ,self.config['atomn']) for idy in range(self.config['atomn'])] for idx in range(self.config['atomn'])]
+        rr_list = [form_op([idy] ,rr ,self.config['atomn']) for idy in range(self.config['atomn'])]
         
         # differnet setup
         right_gst = gst(self.config['atomn'])
         if not self.ErrorOrNot:
             config = get_config(self.config['pos'])
-            if self.method == 'analog+digital':
+            
+            if self.method == 'hybrid':
                 h = HMap(config ,self.config['atomn'] ,self.config['rabi'],self.operator_list)
                 ev=evolution(h,self.config['time'])
+                
             elif self.method == "digital":
                 ev = CnotGate(self.config['atomn'])
+            elif self.method == "analog":
+                fixterm = HMap(config ,self.config['atomn'] ,self.config['rabi'],self.operator_list,method=self.method)
         else:
-            dy=self.config['rabi']*dynamics(self.config['atomn'])
+            if self.method == 'hybrid' or self.method == "analog":
+                dy=self.config['rabi']*dynamics(self.config['atomn'])
             
         # build states
         for da in data:
-            EP=EncodingP(self.config['atomn'],da,op)
-            state= EP * right_gst
+            state=right_gst
+            if self.method != 'analog':     
+                EP=EncodingP(self.config['atomn'],da,op)
+                state= EP * right_gst
             for i in range(self.tier):
                 if self.ErrorOrNot:
-                    if self.method == 'analog+digital':
+                    if self.method != "digital":
                         pos_n = noisy_pos (self.config['pos'],error = self.Error)  #error quera
                         config = get_config(pos_n)
+                    if self.method == 'hybrid':
                         e1=normal(loc=1.0, scale=self.Error[1])
-                        h = e1*dy +Entangle(config, self.config['atomn'],self.operator_list, self.Error)
+                        h = e1*dy +Entangle(config, self.config['atomn'],self.operator_list, self.Error,method=self.method)
                         state=evolve(h,state,self.config['time'])
                     elif self.method == "digital":
                         Noise = noisy_cnot(self.config['atomn'])
                         state= EvCnot(Noise,state)
+                    elif self.method == 'analog':
+                        e1=normal(loc=1.0, scale=self.Error[1])
+                        fixterm=e1*dy+Entangle(config, self.config['atomn'],self.operator_list, self.Error,method=self.method)
+                        h=add_detuning(fixterm ,rr_list, da, self.Error)
+                        state=evolve(h,state,self.config['time'])
+
+                    if self.method == 'hybrid' or self.method == "digital":
+                        state= EP * state
+                    
                 else:
-                    state= ev * state
-                state= EP * state
+                    if self.method == 'analog':
+                        h=add_detuning(fixterm ,rr_list, da, self.Error)
+                        state=evolve(h,state,self.config['time'])
+                    else:
+                        state= ev * state
+                        state= EP * state
+                
+                
             rs.append(state)
             
         #build kernels

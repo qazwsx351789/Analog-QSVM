@@ -83,21 +83,21 @@ def EncodingP(d,data,op):
     return h
 
 
-def Entangle(config , d, operator_list, error=None ):
+def Entangle(config , d, operator_list, error=None ,method="analog+digital"):
     e0 = 0
+    Ent=0
     for idx ,x in enumerate(config) :
         for idy ,y in enumerate(x[idx::],start=idx) :
             if idx != idy:
-                h +=  y * operator_list[idx][idy]
+                Ent +=  y * operator_list[idx][idy]
             else: 
-                if error:
-                    e0=normal(0.0, error[0])
-                try :
-                    h += (y+e0) * operator_list[idx][idy]
-                except :
-                    h  = (y+e0) * operator_list[idx][idy]
+                if method=="analog+digital":
+                    if error:
+                        e0=normal(0.0, error[0])
+                    Ent += (y+e0) * operator_list[idx][idy]
+                   
                 
-    return h
+    return Ent
 
 def CnotGate(d):
   d-=1
@@ -113,8 +113,8 @@ def ZZGate(config,d):
     h = form_op([i],cnot*tensor(iid,Rz(config[i]))*cnot ,d) * h
   return h
 
-def HMap(config , d, Ruby,operator_list, error=None) :
-  return Ruby*dynamics(d) + Entangle(config , d,operator_list ,error)
+def HMap(config , d, Ruby,operator_list, error=None,method=False) :
+  return Ruby*dynamics(d) + Entangle(config , d,operator_list ,error,method)
 
 def evolution(H,t) :
   return (-1j * H * t).expm()
@@ -165,6 +165,17 @@ def evolve(H,state,t) :
     # rs = qutip.sesolve(H ,state,[0,t] )
     rs = qutip.sesolve(H ,state,np.linspace(0,t,50) )
     return rs.states[-1]
+
+# for analog 
+
+def add_detuning(fixterm ,rr_list, x, error) :
+    e=0 if error==[] else error[0]
+    CH  = fixterm
+    for idx ,i in enumerate(x) :
+        CH += i * rr_list[idx] * (1 + normal(0,e))
+    return CH
+
+
 
 ######################################################################################
 ################################## kernal Functions ##################################

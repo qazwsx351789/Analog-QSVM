@@ -9,6 +9,7 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.model_selection import GridSearchCV,RandomizedSearchCV
 from sklearn.metrics import mean_squared_error as mse
+import time
 
 
 
@@ -17,6 +18,24 @@ from sklearn.metrics import mean_squared_error as mse
 ####################################################################################
 ################################## data functions ##################################
 ####################################################################################
+class progress_bar() :
+    def __init__(self ,length):
+        self.length = length
+        self.done = "#" *20
+        self.task = "-" *20
+        self.clock = -1
+        self.progress = -1
+        self.time = time.time()
+    def click(self):
+        self.clock += 1
+    def update(self) :
+        self.click()
+        p = int(20 *self.clock /self.length)
+        if p != self.progress :
+            print("[" ,self.done[0:p] , self.task[p:20] ,"]" , end = '\r')
+            self.progress = p
+    def duration(self):
+        print("\ntime : "  ,(time.time() - self.time))
 
 def shift(target):
   _min = np.min(target)
@@ -34,7 +53,7 @@ def _filter(target , filter) :
   return r ,rid , rest
 def indexing(target , index) :
   return [target[idx] for idx in index]
-def _plot(x,y , filter,color = [] , name = ""):
+def _plot(x,y , filter,color = [] , name = "",start=0,end=0.1):
   px = []
   py = []
   for _x , _y in zip(x,y) :
@@ -45,7 +64,7 @@ def _plot(x,y , filter,color = [] , name = ""):
     plt.scatter( px, py)
   else :
     plt.scatter(px ,py , c =color)
-  plt.plot(np.linspace(0,0.1) , np.linspace(0,0.1))
+  plt.plot(np.linspace(start,end) , np.linspace(start,end))
   if name != "" :
     plt.savefig(name)
   plt.show()
@@ -94,7 +113,7 @@ def _tune(x_train,y_train,x_test , y_test ,kernel_method , tg = 'ts'):
         best = _sc
         best_dict['epsilon'] = ep
         best_dict['C'] = c
-  print(param_grid[0]['C'])
+  # print(param_grid[0]['C'])
   return best_dict
 
 def pca():
