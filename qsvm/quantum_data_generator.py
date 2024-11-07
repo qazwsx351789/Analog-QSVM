@@ -45,7 +45,7 @@ class QDataGenerator:
 
             
     
-    def generate_data(self,op="x",encoding_method='digital'):
+    def encoding_data(self,op="x",encoding_method='digital'):
         self.encoding_method=encoding_method
         self.op=op
         self.encoding_states=[]
@@ -57,7 +57,7 @@ class QDataGenerator:
                 state= EP * state
                 self.encoding_states.append(state)
   
-    def generate_QNN(self,tier=10,QNN_method="analog",atomn=10,aR0=1,detuning=1,rabi=1,t=np.pi):
+    def generate_QNN(self,tier=10,QNN_method="analog",atomn=10,aR0=1,detuning=0,rabi=1,t=np.pi):
         self.config={}
         self.tier=tier
         self.QNN_method=QNN_method
