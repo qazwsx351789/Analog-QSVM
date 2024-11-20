@@ -22,8 +22,10 @@ All the useful functions are included in qsvm.
 Before applying SVM, you can use PCA (Principal Component Analysis) to reduce the dimensionality of features.
 PCA transforms the data into a set of linearly uncorrelated components, capturing the most variance in the dataset 
 while simplifying the complexity of the input features. We offer function 'Pca' for you.
-'''
-Hi
+
+'''python
+# Initialization
+pca=Pca(PCA_n=10,StandardizeOrNot=False,sklearnPCA=True)
 
 '''
 
