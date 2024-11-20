@@ -24,8 +24,8 @@ PCA transforms the data into a set of linearly uncorrelated components, capturin
 while simplifying the complexity of the input features. We offer function 'Pca' for you.
 
     '''python
-# Initialization
-pca=Pca(PCA_n=10,StandardizeOrNot=False,sklearnPCA=True)
+    # Initialization
+    pca=Pca(PCA_n=10,StandardizeOrNot=False,sklearnPCA=True)
 
     ```
 
