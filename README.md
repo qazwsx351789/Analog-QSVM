@@ -60,3 +60,11 @@ For encoding error, you can use **Pauli-X** (`op="x"`) or **Pauli-Z** (`op="z"`)
 Additionally, setting `error=[]` means there is no error in your quantum device during the process.
 
 For more details, please refer to our article, which will be published soon.
+
+Lastly, you can use **SVR** or **SVC** for making predictions with the trained model. The code snippet for making predictions is as follows:
+
+        # Fit the model with the training data and parameters
+        qsvm.fit(tr_kernel, trainlabels, epsilon = argv['epsilon'], C = argv['C'])
+        
+        # Predict using the test kernel
+        rs_t = qsvm.predict(te_kernel)
