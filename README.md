@@ -48,4 +48,15 @@ We use "digital", "analog", "hybrid" to represent approach (a),(b),and (c). Firs
         qsvm=QSVM(task='svr')
         qsvm.default_phys_sys()
         
-In qsvm.default_phys_sys(), you can customize the parameters in the physical settings for the analog part.
+In 'qsvm.default_phys_sys()', you can customize the parameters in the physical settings for the analog part.
+Then, we construct our quantum kernels for training and testing dataset.
+        
+        error=[]
+        tr_kernel=qsvm.get_kernel(svm_tr_data,tier=1,method="hybrid", op="x",Error=error)
+        te_kernel=qsvm.get_kernel(svm_te_data,status="test",tier=1,method="hybrid", op="x",Error=error)
+
+For encoding error, you can use **Pauli-X** (`op="x"`) or **Pauli-Z** (`op="z"`) operators to encode your features into qubits. 
+
+Additionally, setting `error=[]` means there is no error in your quantum device during the process.
+
+For more details, please refer to our article, which will be published soon.
