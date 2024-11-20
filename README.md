@@ -41,3 +41,11 @@ After PCA, we compare three types of quantum kernels, as depicted below.
 - **Figure (b):** Represents the hardware-efficient ansatz (HEA) quantum kernel.
 - **Figure (c):** Illustrates the analog quantum kernel.
 - **Figure (d):** Shows the hybrid quantum kernel.
+
+We use "digital", "analog", "hybrid" to represent approach (a),(b),and (c). First, we initialze our function qsvm.
+
+        # Initialization
+        qsvm=QSVM(task='svr')
+        qsvm.default_phys_sys()
+        
+In qsvm.default_phys_sys(), you can customize the parameters in the physical settings for the analog part.
