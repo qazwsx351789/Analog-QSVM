@@ -26,6 +26,18 @@ while simplifying the complexity of the input features. We offer function 'Pca' 
     # Initialization
     pca=Pca(PCA_n=10,StandardizeOrNot=False,sklearnPCA=True)
 
-We compare three types of quantum kernels, as depicted below. 
+    pca.fitting(traindata)
+    svm_tr_data=pca.transform(traindata)
+    svm_te_data=pca.transform(testdata)
+    
+    # Renormalize each feature (optional)
+    svm_tr_data=pca.Renormalize_Each_Feature(svm_tr_data,Norm=np.pi/2,status="train")
+    svm_te_data=pca.Renormalize_Each_Feature(svm_te_data,Norm=np.pi/2)
+
+After PCA, we compare three types of quantum kernels, as depicted below. 
 <img width="1260" alt="image" src="https://github.com/user-attachments/assets/07c2736a-75a6-4ffb-9015-a09a0230f300">
 
+- **Figure (a):** Demonstrates the fundamental computation method for quantum kernels.
+- **Figure (b):** Represents the hardware-efficient ansatz (HEA) quantum kernel.
+- **Figure (c):** Illustrates the analog quantum kernel.
+- **Figure (d):** Shows the hybrid quantum kernel.
