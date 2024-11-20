@@ -23,11 +23,11 @@ Before applying SVM, you can use PCA (Principal Component Analysis) to reduce th
 PCA transforms the data into a set of linearly uncorrelated components, capturing the most variance in the dataset 
 while simplifying the complexity of the input features. We offer function 'Pca' for you.
 
-'''python
+    '''python
 # Initialization
 pca=Pca(PCA_n=10,StandardizeOrNot=False,sklearnPCA=True)
 
-
+    ```
 
 We compare three types of quantum kernels, as depicted below. 
 <img width="1260" alt="image" src="https://github.com/user-attachments/assets/07c2736a-75a6-4ffb-9015-a09a0230f300">
