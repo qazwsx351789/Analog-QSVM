@@ -2,7 +2,7 @@
 
 In this repository, we provide code to simulate hybrid, analog, and digital quantum kernels. The QuTiP package is utilized 
 for simulating quantum system evolution, while the scikit-learn (sklearn) package is employed for performing PCA, SVR, and SVC.
-
+For detailed research, please refer to our upcoming paper.
 # Summery
 Quantum kernel methods, a promising subset of quantum machine learning algorithms, have shown potential for demonstrating
 quantum advantage. While various quantum kernel methods have theoretically outperformed classical counterparts with the
