@@ -22,8 +22,12 @@ All the useful functions are included in qsvm.
 Before applying SVM, you can use PCA (Principal Component Analysis) to reduce the dimensionality of features.
 PCA transforms the data into a set of linearly uncorrelated components, capturing the most variance in the dataset 
 while simplifying the complexity of the input features. We offer function 'Pca' for you.
+'''
+Hi
 
+'''
 
 
 We compare three types of quantum kernels, as depicted below. 
-[paperplot_qsvm3.pdf](https://github.com/user-attachments/files/17833207/paperplot_qsvm3.pdf)
+<img width="1260" alt="image" src="https://github.com/user-attachments/assets/07c2736a-75a6-4ffb-9015-a09a0230f300">
+
