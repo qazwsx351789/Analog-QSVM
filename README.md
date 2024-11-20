@@ -64,7 +64,9 @@ For more details, please refer to our article, which will be published soon.
 Lastly, you can use **SVR** or **SVC** for making predictions with the trained model. The code snippet for making predictions is as follows:
 
         # Fit the model with the training data and parameters
-        qsvm.fit(tr_kernel, trainlabels, epsilon = argv['epsilon'], C = argv['C'])
+        qsvm.fit(tr_kernel, trainlabels, epsilon = 0, C = 1)
         
         # Predict using the test kernel
         rs_t = qsvm.predict(te_kernel)
+
+A more complete example can be found in Example_Classification.ipynb and Example_Regression.ipynb.
