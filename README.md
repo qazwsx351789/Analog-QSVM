@@ -27,7 +27,6 @@ while simplifying the complexity of the input features. We offer function 'Pca' 
 # Initialization
 pca=Pca(PCA_n=10,StandardizeOrNot=False,sklearnPCA=True)
 
-'''
 
 
 We compare three types of quantum kernels, as depicted below. 
